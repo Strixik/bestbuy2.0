@@ -1,34 +1,83 @@
+from promotions import Promotion
+
+
 class Product:
     """Represent a product with a price and stock quantity."""
 
     def __init__(self, name, price, quantity):
-        """Initialize the product and validate its initial values."""
-        if not name.strip():
-            raise ValueError("Product name cannot be empty.")
-        if price < 0:
-            raise ValueError("Price cannot be negative.")
-        if quantity < 0:
-            raise ValueError("Quantity cannot be negative.")
+        self._name = None
+        self._price = None
+        self._quantity = None
+        self._active = True
+        self._promotion = None
 
         self.name = name
-        self.price = float(price)
+        self.price = price
         self.quantity = quantity
-        self.active = True
-        self.promotion = None
+
+    @property
+    def name(self):
+        """Return the product name."""
+        return self._name
+
+    @name.setter
+    def name(self, value):
+        if not isinstance(value, str) or not value.strip():
+            raise ValueError("Product name cannot be empty.")
+
+        self._name = value
+
+    @property
+    def price(self):
+        """Return the product price."""
+        return self._price
+
+    @price.setter
+    def price(self, value):
+        if value < 0:
+            raise ValueError("Price cannot be negative.")
+
+        self._price = float(value)
+
+    @property
+    def quantity(self):
+        """Return the stock quantity."""
+        return self._quantity
+
+    @quantity.setter
+    def quantity(self, value):
+        if value < 0:
+            raise ValueError("Quantity cannot be negative.")
+
+        self._quantity = value
+
+        if value == 0:
+            self.deactivate()
+
+    @property
+    def active(self):
+        """Return whether the product is active."""
+        return self._active
+
+    @property
+    def promotion(self):
+        """Return the current promotion."""
+        return self._promotion
+
+    @promotion.setter
+    def promotion(self, value):
+        if value is not None and not isinstance(value, Promotion):
+            raise TypeError("Promotion must be a Promotion instance or None.")
+
+        self._promotion = value
 
     def get_quantity(self) -> int:
-        """Return the current stock quantity."""
+        """Return the stock quantity."""
         return self.quantity
 
     def set_quantity(self, quantity):
-        """Update stock quantity and deactivate the product when empty."""
-        if quantity < 0:
-            raise ValueError("Quantity cannot be negative.")
-
+        """Update the stock quantity."""
         self.quantity = quantity
-
-        if self.quantity == 0:
-            self.deactivate()
 
     def is_active(self) -> bool:
         """Return whether the product is active."""
@@ -36,34 +85,48 @@ class Product:
 
     def activate(self):
         """Activate the product."""
-        self.active = True
+        self._active = True
 
     def deactivate(self):
         """Deactivate the product."""
-        self.active = False
+        self._active = False
 
     def get_promotion(self):
         """Return the current promotion."""
         return self.promotion
 
     def set_promotion(self, promotion):
-        """Assign a promotion or remove it with None."""
+        """Assign or remove a promotion."""
         self.promotion = promotion
 
-    def show(self):
-        """Print the product details and its promotion."""
-        promotion_text = (
-            f", Promotion: {self.promotion.name}"
-            if self.promotion is not None
-            else ""
-        )
-        print(
-            f"{self.name}, Price: {self.price:g}, "
-            f"Quantity: {self.quantity}{promotion_text}"
+    def __str__(self):
+        """Return a readable description of the product."""
+        description = (
+            f"{self.name}, Price: ${self.price:g}, "
+            f"Quantity: {self.quantity}"
         )
 
+        if self.promotion is not None:
+            description += f", Promotion: {self.promotion.name}"
+
+        return description
+
+    def __gt__(self, other):
+        """Compare product prices using >."""
+        if not isinstance(other, Product):
+            return NotImplemented
+
+        return self.price > other.price
+
+    def __lt__(self, other):
+        """Compare product prices using <."""
+        if not isinstance(other, Product):
+            return NotImplemented
+
+        return self.price < other.price
+
     def buy(self, quantity) -> float:
-        """Purchase the requested quantity and return its total price."""
+        """Purchase items and return the total price."""
         if not self.active:
             raise ValueError("Product is inactive.")
         if quantity <= 0:
@@ -77,34 +140,37 @@ class Product:
             else self.price * quantity
         )
 
-        self.set_quantity(self.quantity - quantity)
+        self.quantity -= quantity
         return total_price
 
 
 class NonStockedProduct(Product):
-    """Represent a product whose stock quantity is not tracked."""
+    """Represent a product without tracked stock."""
 
     def __init__(self, name, price):
         super().__init__(name, price, quantity=0)
+        self.activate()
 
-    def set_quantity(self, quantity):
-        """Keep the stock quantity at zero."""
-        if quantity != 0:
+    @Product.quantity.setter
+    def quantity(self, value):
+        """Keep the quantity at zero."""
+        if value != 0:
             raise ValueError("A non-stocked product must have quantity 0.")
 
-        self.quantity = 0
+        self._quantity = 0
 
-    def show(self):
-        promotion_text = (
-            f", Promotion: {self.promotion.name}"
-            if self.promotion is not None
-            else ""
-        )
-        print(f"{self.name}, Price: {self.price:g}, Non-stocked{promotion_text}")
+    def __str__(self):
+        """Return a readable description of the product."""
+        description = f"{self.name}, Price: ${self.price:g}, Non-stocked"
+
+        if self.promotion is not None:
+            description += f", Promotion: {self.promotion.name}"
+
+        return description
 
     def buy(self, quantity) -> float:
-        """Sell the product without changing its stock quantity."""
-        if not self.is_active():
+        """Sell items without changing the stock quantity."""
+        if not self.active:
             raise ValueError("Product is inactive.")
         if quantity <= 0:
             raise ValueError("Purchase quantity must be greater than zero.")
@@ -126,42 +192,23 @@ class LimitedProduct(Product):
 
         self.maximum = maximum
 
-    def show(self):
-        promotion_text = (
-            f", Promotion: {self.promotion.name}"
-            if self.promotion is not None
-            else ""
-        )
-        print(
-            f"{self.name}, Price: {self.price:g}, "
+    def __str__(self):
+        """Return a readable description of the product."""
+        description = (
+            f"{self.name}, Price: ${self.price:g}, "
             f"Quantity: {self.quantity}, Maximum: {self.maximum}"
-            f"{promotion_text}"
         )
 
+        if self.promotion is not None:
+            description += f", Promotion: {self.promotion.name}"
+
+        return description
+
     def buy(self, quantity) -> float:
+        """Reject purchases above the limit."""
         if quantity > self.maximum:
             raise ValueError(
                 f"Cannot buy more than {self.maximum} of this product."
             )
 
         return super().buy(quantity)
-
-
-def main():
-    """Run a demonstration of the Product class."""
-    bose = Product("Bose QuietComfort Earbuds", price=250, quantity=500)
-    mac = Product("MacBook Air M2", price=1450, quantity=100)
-
-    print(bose.buy(50))
-    print(mac.buy(100))
-    print(mac.is_active())
-
-    bose.show()
-    mac.show()
-
-    bose.set_quantity(1000)
-    bose.show()
-
-
-if __name__ == "__main__":
-    main()

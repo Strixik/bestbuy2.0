@@ -9,11 +9,11 @@ class Promotion(ABC):
 
     @abstractmethod
     def apply_promotion(self, product, quantity) -> float:
-        """Return the total price after applying the promotion."""
+        """Return the price after applying the promotion."""
 
 
 class PercentDiscount(Promotion):
-    """Reduce the total price by a percentage."""
+    """Apply a percentage discount."""
 
     def __init__(self, name, percent):
         super().__init__(name)

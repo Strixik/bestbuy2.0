@@ -1,6 +1,6 @@
 import products
-import store
 import promotions
+import store
 
 
 def show_products(product_list):
@@ -8,8 +8,7 @@ def show_products(product_list):
     print("------")
 
     for number, product in enumerate(product_list, start=1):
-        print(f"{number}. ", end="")
-        product.show()
+        print(f"{number}. {product}")
 
     print("------")
 
@@ -48,28 +47,23 @@ def make_order(shop):
 
             product = available_products[product_number - 1]
 
-            # Count quantities already added for this product.
             already_ordered = sum(
                 amount
                 for item, amount in shopping_list
                 if item is product
             )
-
             requested_total = already_ordered + quantity
 
-            if (
-                    isinstance(product, products.LimitedProduct)
-                    and requested_total > product.maximum
-            ):
-                raise ValueError(
-                    f"Cannot buy more than {product.maximum} of this product."
-                )
+            if isinstance(product, products.LimitedProduct):
+                if requested_total > product.maximum:
+                    raise ValueError(
+                        f"Cannot buy more than "
+                        f"{product.maximum} of this product."
+                    )
 
-            if (
-                    not isinstance(product, products.NonStockedProduct)
-                    and requested_total > product.get_quantity()
-            ):
-                raise ValueError("Not enough stock.")
+            if not isinstance(product, products.NonStockedProduct):
+                if requested_total > product.quantity:
+                    raise ValueError("Not enough stock.")
 
             shopping_list.append((product, quantity))
             print("Product added to list!\n")
@@ -114,7 +108,7 @@ def start(shop):
 
 
 def main():
-    """Create the initial inventory and start the store interface."""
+    """Create the inventory and start the store interface."""
     product_list = [
         products.Product("MacBook Air M2", price=1450, quantity=100),
         products.Product(
@@ -131,9 +125,9 @@ def main():
     third_one_free = promotions.ThirdOneFree("Third One Free!")
     thirty_percent = promotions.PercentDiscount("30% off!", percent=30)
 
-    product_list[0].set_promotion(second_half_price)
-    product_list[1].set_promotion(third_one_free)
-    product_list[3].set_promotion(thirty_percent)
+    product_list[0].promotion = second_half_price
+    product_list[1].promotion = third_one_free
+    product_list[3].promotion = thirty_percent
 
     best_buy = store.Store(product_list)
     start(best_buy)

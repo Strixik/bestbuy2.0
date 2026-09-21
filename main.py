@@ -54,7 +54,20 @@ def make_order(shop):
                 if item is product
             )
 
-            if already_ordered + quantity > product.get_quantity():
+            requested_total = already_ordered + quantity
+
+            if (
+                    isinstance(product, products.LimitedProduct)
+                    and requested_total > product.maximum
+            ):
+                raise ValueError(
+                    f"Cannot buy more than {product.maximum} of this product."
+                )
+
+            if (
+                    not isinstance(product, products.NonStockedProduct)
+                    and requested_total > product.get_quantity()
+            ):
                 raise ValueError("Not enough stock.")
 
             shopping_list.append((product, quantity))
@@ -107,6 +120,10 @@ def main():
             "Bose QuietComfort Earbuds", price=250, quantity=500
         ),
         products.Product("Google Pixel 7", price=500, quantity=250),
+        products.NonStockedProduct("Windows License", price=125),
+        products.LimitedProduct(
+            "Shipping", price=10, quantity=250, maximum=1
+        ),
     ]
 
     best_buy = store.Store(product_list)

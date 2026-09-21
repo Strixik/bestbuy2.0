@@ -61,6 +61,57 @@ class Product:
         self.set_quantity(self.quantity - quantity)
         return total_price
 
+class NonStockedProduct(Product):
+    """Represent a product whose stock quantity is not tracked."""
+
+    def __init__(self, name, price):
+        super().__init__(name, price, quantity=0)
+
+    def set_quantity(self, quantity):
+        """Keep the stock quantity at zero."""
+        if quantity != 0:
+            raise ValueError("A non-stocked product must have quantity 0.")
+
+        self.quantity = 0
+
+    def show(self):
+        print(f"{self.name}, Price: {self.price:g}, Non-stocked")
+
+    def buy(self, quantity) -> float:
+        """Sell the product without changing its stock quantity."""
+        if not self.is_active():
+            raise ValueError("Product is inactive.")
+        if quantity <= 0:
+            raise ValueError("Purchase quantity must be greater than zero.")
+
+        return self.price * quantity
+
+
+class LimitedProduct(Product):
+    """Represent a product with a purchase limit per order entry."""
+
+    def __init__(self, name, price, quantity, maximum):
+        super().__init__(name, price, quantity)
+
+        if maximum <= 0:
+            raise ValueError("Maximum must be greater than zero.")
+
+        self.maximum = maximum
+
+    def show(self):
+        print(
+            f"{self.name}, Price: {self.price:g}, "
+            f"Quantity: {self.quantity}, Maximum: {self.maximum}"
+        )
+
+    def buy(self, quantity) -> float:
+        if quantity > self.maximum:
+            raise ValueError(
+                f"Cannot buy more than {self.maximum} of this product."
+            )
+
+        return super().buy(quantity)
+
 
 def main():
     """Run a demonstration of the Product class."""

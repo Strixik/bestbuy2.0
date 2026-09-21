@@ -29,13 +29,33 @@ class Store:
         ]
 
     def order(self, shopping_list) -> float:
-        """Purchase each shopping list entry and return the total price."""
-        total_price = 0.0
+        """Purchase products and return the total price."""
+        requested = {}
 
         for product, quantity in shopping_list:
             if product not in self.products:
                 raise ValueError("Product is not available in this store.")
+            if quantity <= 0:
+                raise ValueError("Purchase quantity must be greater than zero.")
 
+            requested[product] = requested.get(product, 0) + quantity
+
+        for product, quantity in requested.items():
+            if not product.is_active():
+                raise ValueError("Product is inactive.")
+
+            if isinstance(product, products.LimitedProduct):
+                if quantity > product.maximum:
+                    raise ValueError(
+                        f"Cannot buy more than {product.maximum} of this product."
+                    )
+
+            if not isinstance(product, products.NonStockedProduct):
+                if quantity > product.get_quantity():
+                    raise ValueError("Not enough stock.")
+
+        total_price = 0.0
+        for product, quantity in shopping_list:
             total_price += product.buy(quantity)
 
         return total_price

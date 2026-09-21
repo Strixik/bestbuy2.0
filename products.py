@@ -14,6 +14,7 @@ class Product:
         self.price = float(price)
         self.quantity = quantity
         self.active = True
+        self.promotion = None
 
     def get_quantity(self) -> int:
         """Return the current stock quantity."""
@@ -41,11 +42,24 @@ class Product:
         """Deactivate the product."""
         self.active = False
 
+    def get_promotion(self):
+        """Return the current promotion."""
+        return self.promotion
+
+    def set_promotion(self, promotion):
+        """Assign a promotion or remove it with None."""
+        self.promotion = promotion
+
     def show(self):
-        """Print the product details."""
+        """Print the product details and its promotion."""
+        promotion_text = (
+            f", Promotion: {self.promotion.name}"
+            if self.promotion is not None
+            else ""
+        )
         print(
             f"{self.name}, Price: {self.price:g}, "
-            f"Quantity: {self.quantity}"
+            f"Quantity: {self.quantity}{promotion_text}"
         )
 
     def buy(self, quantity) -> float:
@@ -57,9 +71,15 @@ class Product:
         if quantity > self.quantity:
             raise ValueError("Not enough stock.")
 
-        total_price = self.price * quantity
+        total_price = (
+            self.promotion.apply_promotion(self, quantity)
+            if self.promotion is not None
+            else self.price * quantity
+        )
+
         self.set_quantity(self.quantity - quantity)
         return total_price
+
 
 class NonStockedProduct(Product):
     """Represent a product whose stock quantity is not tracked."""
@@ -75,7 +95,12 @@ class NonStockedProduct(Product):
         self.quantity = 0
 
     def show(self):
-        print(f"{self.name}, Price: {self.price:g}, Non-stocked")
+        promotion_text = (
+            f", Promotion: {self.promotion.name}"
+            if self.promotion is not None
+            else ""
+        )
+        print(f"{self.name}, Price: {self.price:g}, Non-stocked{promotion_text}")
 
     def buy(self, quantity) -> float:
         """Sell the product without changing its stock quantity."""
@@ -84,11 +109,14 @@ class NonStockedProduct(Product):
         if quantity <= 0:
             raise ValueError("Purchase quantity must be greater than zero.")
 
+        if self.promotion is not None:
+            return self.promotion.apply_promotion(self, quantity)
+
         return self.price * quantity
 
 
 class LimitedProduct(Product):
-    """Represent a product with a purchase limit per order entry."""
+    """Represent a product with a purchase limit per order."""
 
     def __init__(self, name, price, quantity, maximum):
         super().__init__(name, price, quantity)
@@ -99,9 +127,15 @@ class LimitedProduct(Product):
         self.maximum = maximum
 
     def show(self):
+        promotion_text = (
+            f", Promotion: {self.promotion.name}"
+            if self.promotion is not None
+            else ""
+        )
         print(
             f"{self.name}, Price: {self.price:g}, "
             f"Quantity: {self.quantity}, Maximum: {self.maximum}"
+            f"{promotion_text}"
         )
 
     def buy(self, quantity) -> float:

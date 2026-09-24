@@ -5,6 +5,7 @@ class Product:
     """Represent a product with a price and stock quantity."""
 
     def __init__(self, name, price, quantity):
+        """Initialize a product with its name, price, and stock quantity."""
         self._name = None
         self._price = None
         self._quantity = None
@@ -22,6 +23,7 @@ class Product:
 
     @name.setter
     def name(self, value):
+        """Validate and set the product name."""
         if not isinstance(value, str) or not value.strip():
             raise ValueError("Product name cannot be empty.")
 
@@ -34,6 +36,7 @@ class Product:
 
     @price.setter
     def price(self, value):
+        """Validate and set the product price."""
         if value < 0:
             raise ValueError("Price cannot be negative.")
 
@@ -46,6 +49,7 @@ class Product:
 
     @quantity.setter
     def quantity(self, value):
+        """Validate and set the stock quantity."""
         if value < 0:
             raise ValueError("Quantity cannot be negative.")
 
@@ -66,6 +70,7 @@ class Product:
 
     @promotion.setter
     def promotion(self, value):
+        """Validate and set the current promotion."""
         if value is not None and not isinstance(value, Promotion):
             raise TypeError("Promotion must be a Promotion instance or None.")
 
@@ -112,14 +117,14 @@ class Product:
         return description
 
     def __gt__(self, other):
-        """Compare product prices using >."""
+        """Compare product prices using the greater-than operator."""
         if not isinstance(other, Product):
             return NotImplemented
 
         return self.price > other.price
 
     def __lt__(self, other):
-        """Compare product prices using <."""
+        """Compare product prices using the less-than operator."""
         if not isinstance(other, Product):
             return NotImplemented
 
@@ -129,8 +134,10 @@ class Product:
         """Purchase items and return the total price."""
         if not self.active:
             raise ValueError("Product is inactive.")
+
         if quantity <= 0:
             raise ValueError("Purchase quantity must be greater than zero.")
+
         if quantity > self.quantity:
             raise ValueError("Not enough stock.")
 
@@ -148,20 +155,23 @@ class NonStockedProduct(Product):
     """Represent a product without tracked stock."""
 
     def __init__(self, name, price):
+        """Initialize a non-stocked product with zero quantity."""
         super().__init__(name, price, quantity=0)
         self.activate()
 
     @Product.quantity.setter
     def quantity(self, value):
-        """Keep the quantity at zero."""
+        """Validate and keep the quantity at zero."""
         if value != 0:
             raise ValueError("A non-stocked product must have quantity 0.")
 
         self._quantity = 0
 
     def __str__(self):
-        """Return a readable description of the product."""
-        description = f"{self.name}, Price: ${self.price:g}, Non-stocked"
+        """Return a readable description of the non-stocked product."""
+        description = (
+            f"{self.name}, Price: ${self.price:g}, Non-stocked"
+        )
 
         if self.promotion is not None:
             description += f", Promotion: {self.promotion.name}"
@@ -172,6 +182,7 @@ class NonStockedProduct(Product):
         """Sell items without changing the stock quantity."""
         if not self.active:
             raise ValueError("Product is inactive.")
+
         if quantity <= 0:
             raise ValueError("Purchase quantity must be greater than zero.")
 
@@ -185,6 +196,7 @@ class LimitedProduct(Product):
     """Represent a product with a purchase limit per order."""
 
     def __init__(self, name, price, quantity, maximum):
+        """Initialize a product with a maximum purchase quantity."""
         super().__init__(name, price, quantity)
 
         if maximum <= 0:
@@ -193,7 +205,7 @@ class LimitedProduct(Product):
         self.maximum = maximum
 
     def __str__(self):
-        """Return a readable description of the product."""
+        """Return a readable description of the limited product."""
         description = (
             f"{self.name}, Price: ${self.price:g}, "
             f"Quantity: {self.quantity}, Maximum: {self.maximum}"
@@ -205,7 +217,7 @@ class LimitedProduct(Product):
         return description
 
     def buy(self, quantity) -> float:
-        """Reject purchases above the limit."""
+        """Purchase items while enforcing the purchase limit."""
         if quantity > self.maximum:
             raise ValueError(
                 f"Cannot buy more than {self.maximum} of this product."

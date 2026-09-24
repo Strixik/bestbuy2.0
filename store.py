@@ -5,6 +5,7 @@ class Store:
     """Manage products and process orders."""
 
     def __init__(self, product_list):
+        """Initialize the store with a copy of the product list."""
         self.products = list(product_list)
 
     def add_product(self, product):
@@ -16,8 +17,12 @@ class Store:
         self.products.remove(product)
 
     def get_total_quantity(self) -> int:
-        """Return the total stock quantity."""
-        return sum(product.quantity for product in self.products)
+        """Return the total quantity of all active products."""
+        return sum(
+            product.quantity
+            for product in self.products
+            if product.active
+        )
 
     def get_all_products(self):
         """Return all active products."""
@@ -28,7 +33,7 @@ class Store:
         ]
 
     def __contains__(self, product):
-        """Support: product in store."""
+        """Return whether the store contains the product."""
         return product in self.products
 
     def __add__(self, other):
